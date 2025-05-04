@@ -13,8 +13,6 @@ public:
     ~JPEGFile();
 
     int getQuality() const { return quality_; }
-    size_t getWidth() const { return width_; }
-    size_t getHeight() const { return height_; }
     std::string getFilePath() const { return filePath_; }
     const jpeg_decompress_struct &getCinfo() const { return cinfo_; }
     const std::vector<std::vector<int>> &getQM() const { return QM_; }
@@ -23,8 +21,6 @@ public:
 
 private:
     int quality_;
-    size_t width_;
-    size_t height_;
     std::string filePath_;
     jpeg_decompress_struct cinfo_;
     std::vector<std::vector<int>> QM_;

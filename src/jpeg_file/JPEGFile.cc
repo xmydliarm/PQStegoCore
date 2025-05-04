@@ -30,17 +30,17 @@ JPEGFile::JPEGFile(const std::string& filePath)
 
     ReadJPEGInfo(infile);
 
-    height_ = cinfo_.image_height;
-    width_ = cinfo_.image_width;
+    //height_ = cinfo_.image_height;
+    //width_ = cinfo_.image_width;
 
     QM_= std::vector(8, std::vector<int>(8));
     ExtractQmatrix();
 
     quality_ = JPEGProcessor::EstimateQuality(this);
 
-    JPEGProcessor::PlaneToVec(dct_coefficients_, height_, width_, D_);
+    JPEGProcessor::PlaneToVec(dct_coefficients_, cinfo_.image_height, cinfo_.image_width, D_);
 
-    X_ = std::vector(height_, std::vector(width_, 0.0));
+    X_ = std::vector(cinfo_.comp_info->height_in_blocks * 8, std::vector(cinfo_.comp_info->width_in_blocks * 8, 0.0));
     JPEGProcessor::DecompressImage(D_, QM_, X_);
 
     fclose(infile);

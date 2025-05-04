@@ -390,7 +390,9 @@ void JPEGProcessor::DecompressImage(const std::vector<std::vector<std::vector<in
             counter = 0;
             for (int k = 0; k < B; k++) {
                 for (int l = 0; l < B; l++) {
-                    X[ib + k][jb + l] = out_array[counter];
+                    if (ib + k < (int)X.size() && jb + l < (int)X[0].size()) {
+                        X[ib + k][jb + l] = out_array[counter];
+                    }
                     counter++;
                 }
             }
@@ -448,8 +450,8 @@ void JPEGProcessor::VecToPlane(const std::vector<std::vector<std::vector<double>
  * @param[out] D 3D vector to store the reshaped blocks of DCT coefficients.
  */
 void JPEGProcessor::PlaneToVec(const std::vector<std::vector<double>>& plane, const size_t Y, const size_t X, std::vector<std::vector<std::vector<int>>>& D) {
-    const size_t M = X / 8; // Count of columns
-    const size_t N = Y / 8; // Count of rows
+    const size_t M = ceil((double)X / 8); // Count of columns
+    const size_t N = ceil((double)Y / 8); // Count of rows
 
     // Resize the D1 vector to hold the reshaped blocks
     D.resize(N, std::vector(M, std::vector(64, 0)));
@@ -465,7 +467,9 @@ void JPEGProcessor::PlaneToVec(const std::vector<std::vector<double>>& plane, co
                 // Columns inside block (MATLAB-style: first move column)
                 for (int m = 0; m < 8; ++m) {
                     // Rows inside block
-                    D[i][j][idx++] = static_cast<int>(plane[i * 8 + m][j * 8 + n]);
+                    if (i * 8 + m < plane.size() && j * 8 + n < plane[0].size()) {
+                        D[i][j][idx++] = static_cast<int>(plane[i * 8 + m][j * 8 + n]);
+                    }
                 }
             }
         }
@@ -540,13 +544,14 @@ void JPEGProcessor::SavePerturbedJPEG(const std::string& file_path, JPEGFile* te
  * Compresses and writes a 2D image matrix into a JPEG file with a specified quality.
  *
  * @param[in] filename Path to the output JPEG file.
- * @param[in] image 2D image matrix to save.
+ * @param[in] original_file Pointer to a JPEGFile object representing the base structure for output.
+ *                          Used for copying image size and coefficients.
  * @param[in] quality JPEG compression quality (1-100).
  */
-void JPEGProcessor::SaveCoverJPEG(const char* filename, const std::vector<std::vector<double>>& image, int quality) {
+void JPEGProcessor::SaveCoverJPEG(const char* filename, JPEGFile* original_file, int quality) {
     // Define image dimensions based on X1
-    int width = (int)image[0].size();
-    int height = (int)image.size();
+    size_t width = original_file->getCinfo().image_width;
+    size_t height = original_file->getCinfo().image_height;
 
     // Initialize JPEG compression object
     jpeg_compress_struct cinfo{};
@@ -583,8 +588,8 @@ void JPEGProcessor::SaveCoverJPEG(const char* filename, const std::vector<std::v
     while (cinfo.next_scanline < cinfo.image_height) {
         // Convert the vector data to unsigned char (expected by libjpeg)
         std::vector<unsigned char> row(width);
-        for (int i = 0; i < width; ++i) {
-            row[i] = static_cast<unsigned char>(image[cinfo.next_scanline][i]);
+        for (size_t i = 0; i < width; ++i) {
+            row[i] = static_cast<unsigned char>(original_file->getX()[cinfo.next_scanline][i]);
         }
         row_pointer[0] = &row[0]; // Row to write
         jpeg_write_scanlines(&cinfo, row_pointer, 1);

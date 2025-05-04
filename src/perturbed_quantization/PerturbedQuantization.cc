@@ -107,18 +107,18 @@ std::vector<std::vector<double>> PerturbedQuantization::EmbedMessage(const JPEGF
  *
  * @throws std::runtime_error if input images mismatch in size or quality order is incorrect.
  */
-std::string PerturbedQuantization::DecodeMessage(const JPEGFile* original_image, const JPEGFile *embedded_image) {
+std::string PerturbedQuantization::DecodeMessage(JPEGFile *original_image, const JPEGFile *embedded_image) {
     if (original_image->getQuality() <= embedded_image->getQuality()) {
         throw std::runtime_error("Incorrect original image, higher quality expected");
     }
 
-    if (original_image->getHeight() != embedded_image->getHeight()
-        || original_image->getWidth() != embedded_image->getWidth()) {
+    if (original_image->getCinfo().image_width != embedded_image->getCinfo().image_width
+        || original_image->getCinfo().image_height != embedded_image->getCinfo().image_height) {
         throw std::runtime_error("Size mismatch, incorrect images");
     }
 
     std::string temp_path = JPEGProcessor::GetTempFilename("pq_image", "jpg");
-    JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image->getX(), original_image->getQuality() - 5);
+    JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image, original_image->getQuality() - 5);
 
     auto temp_cover_image = new JPEGFile(temp_path);
 
