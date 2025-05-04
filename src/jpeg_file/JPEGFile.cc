@@ -30,9 +30,6 @@ JPEGFile::JPEGFile(const std::string& filePath)
 
     ReadJPEGInfo(infile);
 
-    //height_ = cinfo_.image_height;
-    //width_ = cinfo_.image_width;
-
     QM_= std::vector(8, std::vector<int>(8));
     ExtractQmatrix();
 

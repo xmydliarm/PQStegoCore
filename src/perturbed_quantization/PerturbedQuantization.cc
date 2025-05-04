@@ -107,7 +107,7 @@ std::vector<std::vector<double>> PerturbedQuantization::EmbedMessage(const JPEGF
  *
  * @throws std::runtime_error if input images mismatch in size or quality order is incorrect.
  */
-std::string PerturbedQuantization::DecodeMessage(const JPEGFile *original_image, const JPEGFile *embedded_image) {
+std::string PerturbedQuantization::DecodeMessage(const JPEGFile* original_image, const JPEGFile* embedded_image) {
     if (original_image->getQuality() <= embedded_image->getQuality()) {
         throw std::runtime_error("Incorrect original image, higher quality expected");
     }
@@ -117,8 +117,10 @@ std::string PerturbedQuantization::DecodeMessage(const JPEGFile *original_image,
         throw std::runtime_error("Size mismatch, incorrect images");
     }
 
+    const int cover_quality = ComputeOptimalCompressionQuality(original_image->getQuality());
+
     std::string temp_path = JPEGProcessor::GetTempFilename("pq_image", "jpg");
-    JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image, original_image->getQuality() - 5);
+    JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image, cover_quality);
 
     auto temp_cover_image = new JPEGFile(temp_path);
 
@@ -259,6 +261,33 @@ void PerturbedQuantization::InitializeContributingPairs(std::vector<std::vector<
             }
         }
     }
+}
+
+/**
+ * @brief Computes an optimal second JPEG compression quality for perturbed quantization.
+ *
+ * This function determines the optimal compression quality to be used during the second 
+ * stage of JPEG compression in the perturbed quantization algorithm. The optimal quality 
+ * depends on the original compression quality of the JPEG image.
+ *
+ * - If the original quality is less than 70, the function throws an exception because
+ *   high-quality images are required for the algorithm to work effectively.
+ * - If the original quality is 100, the function returns 98 to prevent RJCA attack.
+ * - Otherwise, it returns a computed value: 2 * (original_quality - 50).
+ *
+ * @param[in] original_quality The quality of the original JPEG image (1–100).
+ * @return The computed optimal compression quality for the second compression.
+ *
+ * @throws std::runtime_error if the original quality is less than 70.
+ */
+int PerturbedQuantization::ComputeOptimalCompressionQuality(const int original_quality) {
+    if (original_quality < 70)
+        throw std::runtime_error("Higher quality image required");
+
+    if (original_quality == 100)
+        return 98;
+
+    return 2 * (original_quality - 50);
 }
 
 /**

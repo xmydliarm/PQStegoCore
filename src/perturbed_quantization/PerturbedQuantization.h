@@ -19,6 +19,8 @@ public:
         int q2;
     };
 
+    static int ComputeOptimalCompressionQuality(int original_quality);
+
     static size_t ComputeCapacity(const std::vector<ContribMultiple>& contrib_multiples);
 
     static std::vector<ContribMultiple> ComputeContributingMultiples(const JPEGFile* input_file,

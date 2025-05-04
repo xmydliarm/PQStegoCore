@@ -35,19 +35,29 @@ int JPEGProcessor::EstimateQuality(const JPEGFile* jpeg_file) {
         {72, 92, 95, 98, 112, 100, 103, 99}
     };
 
-    auto results = std::vector<int>();
+    const auto& Qm = jpeg_file->getQM();
+
+    const bool only_ones = std::ranges::all_of(Qm, [](const std::vector<int>& row) {
+        return std::ranges::all_of(row, [](const int val) { return val == 1; });
+    });
+
+    // Qm has only ones
+    if (only_ones) {
+        return 100;
+    }
 
     // Floor values
+    auto results = std::vector<int>();
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
-            double x = 100 - (100.0 * jpeg_file->getQM()[i][j] - 50) / (2.0 * Q50[i][j]);
+            double x = 100 - (100.0 * Qm[i][j] - 50) / (2.0 * Q50[i][j]);
             int casted_x = static_cast<int>(x);
             results.emplace_back(casted_x);
         }
     }
 
     // Compute median
-    std::sort(results.begin(), results.end());
+    std::ranges::stable_sort(results);
     int median = results[64 / 2 - 1];
 
     return median;

@@ -27,8 +27,10 @@ int main(int argc, char* argv[]) {
 
         auto original_image = new JPEGFile(original_image_path);
 
+        const int cover_quality = PerturbedQuantization::ComputeOptimalCompressionQuality(original_image->getQuality());
+
         string temp_path = JPEGProcessor::GetTempFilename("pq_image", "jpg");
-        JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image, original_image->getQuality() - 5);
+        JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image, cover_quality);
         auto temp_cover_image = new JPEGFile(temp_path);
 
         auto D2raw = vector<vector<vector<double>>>();
@@ -48,8 +50,10 @@ int main(int argc, char* argv[]) {
 
         auto original_image = new JPEGFile(original_image_path);
 
+        const int cover_quality = PerturbedQuantization::ComputeOptimalCompressionQuality(original_image->getQuality());
+
         string temp_path = JPEGProcessor::GetTempFilename("pq_image", "jpg");
-        JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image, original_image->getQuality() - 5);
+        JPEGProcessor::SaveCoverJPEG(temp_path.c_str(), original_image, cover_quality);
         auto temp_cover_image = new JPEGFile(temp_path);
 
         auto D2raw = vector<vector<vector<double>>>();
