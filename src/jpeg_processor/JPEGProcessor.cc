@@ -492,7 +492,7 @@ void JPEGProcessor::PlaneToVec(const std::vector<std::vector<double>>& plane, co
  *
  * @note This function assumes the image is grayscale and does not modify chroma components.
  */
-void JPEGProcessor::SavePerturbedJPEG(const std::string& file_path, JPEGFile* temp_file, std::vector<std::vector<double>>& plane) {
+void JPEGProcessor::SavePerturbedJPEG(const std::string& file_path, const JPEGFile* temp_file, std::vector<std::vector<double>>& plane) {
     auto cinfo = temp_file->getCinfo();
 
     jvirt_barray_ptr *coef_arrays = jpeg_read_coefficients(&cinfo);
@@ -548,7 +548,7 @@ void JPEGProcessor::SavePerturbedJPEG(const std::string& file_path, JPEGFile* te
  *                          Used for copying image size and coefficients.
  * @param[in] quality JPEG compression quality (1-100).
  */
-void JPEGProcessor::SaveCoverJPEG(const char* filename, JPEGFile* original_file, int quality) {
+void JPEGProcessor::SaveCoverJPEG(const char* filename, const JPEGFile* original_file, int quality) {
     // Define image dimensions based on X1
     size_t width = original_file->getCinfo().image_width;
     size_t height = original_file->getCinfo().image_height;

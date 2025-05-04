@@ -107,7 +107,7 @@ std::vector<std::vector<double>> PerturbedQuantization::EmbedMessage(const JPEGF
  *
  * @throws std::runtime_error if input images mismatch in size or quality order is incorrect.
  */
-std::string PerturbedQuantization::DecodeMessage(JPEGFile *original_image, const JPEGFile *embedded_image) {
+std::string PerturbedQuantization::DecodeMessage(const JPEGFile *original_image, const JPEGFile *embedded_image) {
     if (original_image->getQuality() <= embedded_image->getQuality()) {
         throw std::runtime_error("Incorrect original image, higher quality expected");
     }

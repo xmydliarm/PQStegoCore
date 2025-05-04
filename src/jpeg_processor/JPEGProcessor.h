@@ -37,7 +37,7 @@ class JPEGProcessor {
 public:
     JPEGProcessor() = delete;
 
-    static void SaveCoverJPEG(const char* filename, JPEGFile* original_file, int quality);
+    static void SaveCoverJPEG(const char* filename, const JPEGFile* original_file, int quality);
 
     static void ComputeDCTBlocks(const std::vector<std::vector<double>>& X,
                                  std::vector<std::vector<std::vector<double>>>& D_raw);
@@ -49,7 +49,7 @@ public:
                                 std::vector<std::vector<double>>& X
     );
 
-    static void SavePerturbedJPEG(const std::string& file_path, JPEGFile* temp_file,
+    static void SavePerturbedJPEG(const std::string& file_path, const JPEGFile* temp_file,
                                   std::vector<std::vector<double>>& plane);
 
     static void VecToPlane(const std::vector<std::vector<std::vector<double>>>& cube, size_t MB, size_t NB,
