@@ -503,44 +503,54 @@ void JPEGProcessor::PlaneToVec(const std::vector<std::vector<double>>& plane, co
  * @note This function assumes the image is grayscale and does not modify chroma components.
  */
 void JPEGProcessor::SavePerturbedJPEG(const std::string& file_path, const JPEGFile* temp_file, std::vector<std::vector<double>>& plane) {
-    auto cinfo = temp_file->getCinfo();
+    // 1. Open original and get coefficient arrays
+    jpeg_decompress_struct cinfo = temp_file->getCinfo();
+    jvirt_barray_ptr* coef_arrays = jpeg_read_coefficients(&cinfo);
 
-    jvirt_barray_ptr *coef_arrays = jpeg_read_coefficients(&cinfo);
-
+    // 2. Set up compressor for output JPEG
     jpeg_compress_struct cinfo_out{};
     jpeg_error_mgr jerr_out{};
-
     cinfo_out.err = jpeg_std_error(&jerr_out);
     jpeg_create_compress(&cinfo_out);
-    jpeg_copy_critical_parameters(&cinfo, &cinfo_out);
 
-    FILE *outfile = fopen(file_path.c_str(), "wb");
-    if (outfile == nullptr) {
+    FILE* outfile = fopen(file_path.c_str(), "wb");
+    if (!outfile) {
+        jpeg_destroy_compress(&cinfo_out);
         throw std::runtime_error("Could not create final image file");
     }
     jpeg_stdio_dest(&cinfo_out, outfile);
 
+    // 3. Copy all critical parameters (sampling, quant, etc.) from original
+    jpeg_copy_critical_parameters(&cinfo, &cinfo_out);
+
+    // 4. Overwrite Y DCT blocks, leave CbCr untouched
     for (int ci = 0; ci < cinfo.num_components; ci++) {
-        jpeg_component_info *compptr = &cinfo.comp_info[ci];
-        auto block_rows = compptr->height_in_blocks;
-        auto block_cols = compptr->width_in_blocks;
+        jpeg_component_info* compptr = &cinfo.comp_info[ci];
+        int block_rows = compptr->height_in_blocks;
+        int block_cols = compptr->width_in_blocks;
 
-        for (unsigned int blk_y = 0; blk_y < block_rows; blk_y++) {
+        for (int blk_y = 0; blk_y < block_rows; blk_y++) {
+            // TRUE: writeable buffer for output, FALSE: read-only for input
             JBLOCKARRAY buffer = (cinfo.mem->access_virt_barray)
-                    (reinterpret_cast<j_common_ptr>(&cinfo), coef_arrays[ci], blk_y, 1, TRUE);
+                (reinterpret_cast<j_common_ptr>(&cinfo), coef_arrays[ci], blk_y, 1, TRUE);
 
-            for (unsigned int blk_x = 0; blk_x < block_cols; blk_x++) {
-                for (int i = 0; i < 8; i++) {
-                    for (int j = 0; j < 8; j++) {
-                        unsigned int plane_row = blk_y * 8 + i;
-                        unsigned int plane_col = blk_x * 8 + j;
-                        buffer[0][blk_x][i * DCTSIZE + j] = static_cast<JCOEF>(plane[plane_row][plane_col]);
-                    }
+            for (int blk_x = 0; blk_x < block_cols; blk_x++) {
+                if (ci == 0) { // Y channel: overwrite with plane data
+                    for (int i = 0; i < DCTSIZE; i++)
+                        for (int j = 0; j < DCTSIZE; j++) {
+                            int row = blk_y * DCTSIZE + i;
+                            int col = blk_x * DCTSIZE + j;
+                            // Bounds check (may be needed for non-multiple-of-8 images)
+                            if (row < static_cast<int>(plane.size()) && col < static_cast<int>(plane[0].size())) {
+                                buffer[0][blk_x][i * DCTSIZE + j] = static_cast<JCOEF>(plane[row][col]);
+                            }
+                        }
                 }
             }
         }
     }
 
+    // 5. Write the modified coefficients out
     jpeg_write_coefficients(&cinfo_out, coef_arrays);
 
     jpeg_finish_compress(&cinfo_out);
@@ -559,58 +569,86 @@ void JPEGProcessor::SavePerturbedJPEG(const std::string& file_path, const JPEGFi
  * @param[in] quality JPEG compression quality (1-100).
  */
 void JPEGProcessor::SaveCoverJPEG(const char* filename, const JPEGFile* original_file, int quality) {
-    // Define image dimensions based on X1
-    size_t width = original_file->getCinfo().image_width;
-    size_t height = original_file->getCinfo().image_height;
+    // 1) DECOMPRESS the original JPEG into raw YCbCr
+    jpeg_decompress_struct din{};
+    jpeg_error_mgr         djerr{};
+    din.err = jpeg_std_error(&djerr);
+    jpeg_create_decompress(&din);
 
-    // Initialize JPEG compression object
-    jpeg_compress_struct cinfo{};
-    jpeg_error_mgr jerr{};
+    FILE* orig_fp = fopen(original_file->getFilePath().c_str(), "rb");
+    if (!orig_fp) {
+        jpeg_destroy_decompress(&din);
+        throw std::runtime_error("Can't reopen source JPEG");
+    }
+    jpeg_stdio_src(&din, orig_fp);
 
-    cinfo.err = jpeg_std_error(&jerr);
-    jpeg_create_compress(&cinfo);
+    jpeg_read_header(&din, TRUE);
+    din.out_color_space = JCS_YCbCr;
+    jpeg_start_decompress(&din);
 
-    // Open file for output
-    FILE *outfile;
-    if ((outfile = fopen(filename, "wb")) == nullptr) {
+    const int W          = din.output_width;
+    const int H          = din.output_height;
+    const int comps      = din.output_components;   // should be 3
+    const int row_stride = W * comps;
+
+    std::vector<JSAMPLE> rawbuf(H * row_stride);
+    JSAMPROW             rowptr[1];
+    for (int y = 0; y < H; ++y) {
+        rowptr[0] = &rawbuf[y * row_stride];
+        jpeg_read_scanlines(&din, rowptr, 1);
+    }
+
+    jpeg_finish_decompress(&din);
+    fclose(orig_fp);
+
+    // 2) PATCH only the Y channel
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            int idx = y * row_stride + x * 3;
+            double v = original_file->getX()[y][x];
+            v = std::min(std::max(v, 0.0), 255.0);
+            rawbuf[idx + 0] = static_cast<JSAMPLE>(v);
+        }
+    }
+
+    // 3) RE-COMPRESS as YCbCr, preserving all original parameters
+    jpeg_compress_struct cout{};
+    jpeg_error_mgr       cjerr{};
+    cout.err = jpeg_std_error(&cjerr);
+    jpeg_create_compress(&cout);
+
+    FILE* out_fp = fopen(filename, "wb");
+    if (!out_fp) {
+        jpeg_destroy_compress(&cout);
+        jpeg_destroy_decompress(&din);
         throw std::runtime_error("Could not create cover image file");
     }
+    jpeg_stdio_dest(&cout, out_fp);
 
-    jpeg_stdio_dest(&cinfo, outfile);
+    // Copy the original's sampling factors, quant tables, markers, etc.
+    jpeg_copy_critical_parameters(&din, &cout);
 
-    // Set image parameters
-    cinfo.image_width = width;
-    cinfo.image_height = height;
-    cinfo.input_components = 1; // 1 for grayscale or 3 for RGB
-    cinfo.in_color_space = JCS_GRAYSCALE; // or JCS_RGB for color images
+    // Set input color space and components
+    cout.input_components = comps;
+    cout.in_color_space   = JCS_YCbCr;
 
-    // Set default compression parameters and set quality
-    jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, quality, TRUE);
+    // Rescale quantization tables to the desired quality
+    jpeg_set_quality(&cout, quality, TRUE);
 
-    // Start compression
-    jpeg_start_compress(&cinfo, TRUE);
+    jpeg_start_compress(&cout, TRUE);
 
-    // Allocate memory for row buffer
-    JSAMPROW row_pointer[1];
-
-    // Write each row of the image to the output JPEG
-    while (cinfo.next_scanline < cinfo.image_height) {
-        // Convert the vector data to unsigned char (expected by libjpeg)
-        std::vector<unsigned char> row(width);
-        for (size_t i = 0; i < width; ++i) {
-            row[i] = static_cast<unsigned char>(original_file->getX()[cinfo.next_scanline][i]);
-        }
-        row_pointer[0] = &row[0]; // Row to write
-        jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    // Write back each scanline of {Y(patched), Cb, Cr}
+    for (int y = 0; y < H; ++y) {
+        rowptr[0] = &rawbuf[y * row_stride];
+        jpeg_write_scanlines(&cout, rowptr, 1);
     }
 
-    // Finish compression
-    jpeg_finish_compress(&cinfo);
+    jpeg_finish_compress(&cout);
+    fclose(out_fp);
 
-    // Clean up and close the file
-    fclose(outfile);
-    jpeg_destroy_compress(&cinfo);
+    // CLEAN UP
+    jpeg_destroy_compress(&cout);
+    jpeg_destroy_decompress(&din);
 }
 
 /**
