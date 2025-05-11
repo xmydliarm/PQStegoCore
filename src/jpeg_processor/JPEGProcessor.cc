@@ -35,6 +35,28 @@ int JPEGProcessor::EstimateQuality(const JPEGFile* jpeg_file) {
         {72, 92, 95, 98, 112, 100, 103, 99}
     };
 
+    const std::vector<std::vector<int>> Q99 = {
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 1, 1, 1, 1, 2, 2, 1},
+        {1, 1, 1, 1, 1, 2, 2, 2},
+        {1, 1, 1, 1, 2, 2, 2, 2},
+        {1, 1, 2, 2, 2, 2, 2, 2},
+        {1, 2, 2, 2, 2, 2, 2, 2}
+    };
+
+    const std::vector<std::vector<int>> Q98 = {
+        {1, 1, 1, 1, 1, 2, 2, 2},
+        {1, 1, 1, 1, 1, 2, 2, 2},
+        {1, 1, 1, 1, 2, 2, 3, 2},
+        {1, 1, 1, 1, 2, 3, 3, 2},
+        {1, 1, 1, 2, 3, 4, 4, 3},
+        {1, 1, 2, 3, 3, 4, 5, 4},
+        {2, 3, 3, 3, 4, 5, 5, 4},
+        {3, 4, 4, 4, 4, 4, 4, 4}
+    };
+
     const auto& Qm = jpeg_file->getQM();
 
     const bool only_ones = std::ranges::all_of(Qm, [](const std::vector<int>& row) {
@@ -56,11 +78,20 @@ int JPEGProcessor::EstimateQuality(const JPEGFile* jpeg_file) {
         }
     }
 
-    // Compute median
-    std::ranges::stable_sort(results);
-    int median = results[64 / 2 - 1];
+    auto min_iter = std::ranges::min_element(results);
 
-    return median;
+    int sum = std::accumulate(results.begin(), results.end(), 0);
+    int average = floor(results.empty() ? 0 : sum / 64.0);
+    int min = *min_iter;
+
+    if ((average == 99 && Qm != Q99) ||
+    (average == 98 && Qm != Q98) ||
+    (average != 99 && average != 98 && min != average))
+    {
+        throw std::runtime_error("Image not supported, standard JPEG compression required");
+    }
+
+    return average;
 }
 
 /**

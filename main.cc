@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 
         JPEGProcessor::SavePerturbedJPEG(output_image_path, temp_cover_image, image_X2_embedded);
 
-        std::cout << "\n ---- Perturbed JPEG saved successfully! ----" << std::endl;
+        std::cout << "Perturbed JPEG saved successfully!" << std::endl;
 
     } else if(mode == "-decode" && argc == 4) {
         // Decoding mode

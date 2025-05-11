@@ -88,8 +88,7 @@ std::vector<std::vector<double>> PerturbedQuantization::EmbedMessage(const JPEGF
     std::vector<std::vector<double>> resultPlane;
     JPEGProcessor::VecToPlane(D2n, MB, NB, resultPlane);
 
-    std::cout << "\n ---- Message embedded! (Changes: " << changes << ") ----" << std::endl;
-    //std::cout << "Zeros: " << Zeros << ", NonZeros: " << NonZeros << "\n";
+    std::cout << "Message embedded! (Changes: " << changes << ")" << std::endl;
 
     return resultPlane;
 }
