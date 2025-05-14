@@ -45,6 +45,20 @@ Objektovo orientovaná implementácia steganografického algoritmu <i>Perturbed 
 <b>./pq -decode original.jpg stego.jpg</b> <br><br>
 <b>Výstup:</b> Decoded message: Tajná správa
 
+## Systémové požiadavky
+
+### OS
+- Linux  
+- Windows  
+- macOS  
+
+### Závislosti
+- C++ kompilátor (napr. GCC, Clang, MSVC)  
+- CMake (pre generovanie build systému)  
+- libjpeg-turbo (je súčasťou projektu <i>lib/libjpeg-turbo</i>)
+
+Vo všeobecnost je kompatibilita definová podporou CMake, C++ a knižnice libjpeg-turbo.
+
 ## Architektúra
 
 <p align="left">
