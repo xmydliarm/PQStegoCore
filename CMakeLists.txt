@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(PQ_implementation)
+project(pq)
 
 ################ CXX FLAGS ##################
 set(CMAKE_CXX_STANDARD 26)
@@ -49,12 +49,12 @@ set(HDRS
         src/perturbed_quantization/PerturbedQuantization.h
 )
 
-add_executable(PQ_implementation
+add_executable(pq
         ${SRCS}
         ${HDRS}
 )
 
-target_link_libraries(PQ_implementation
+target_link_libraries(pq
         PRIVATE
         ${LIBJPEGTURBO_LIBRARIES}
 )
