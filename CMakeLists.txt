@@ -8,7 +8,6 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 if(NOT MSVC)
-    #set(warnings "-Wall -Wextra -pedantic -Werror")
     set(warnings "-Wextra -Werror -pedantic")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pthread ${warnings}")
     if(OPTIMIZE_FOR_NATIVE)
@@ -57,6 +56,5 @@ add_executable(PQ_implementation
 
 target_link_libraries(PQ_implementation
         PRIVATE
-        jpeg
         ${LIBJPEGTURBO_LIBRARIES}
 )
