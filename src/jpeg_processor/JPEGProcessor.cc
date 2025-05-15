@@ -629,9 +629,6 @@ void JPEGProcessor::SaveCoverJPEG(const char* filename, const JPEGFile* original
         jpeg_read_scanlines(&din, rowptr, 1);
     }
 
-    jpeg_finish_decompress(&din);
-    fclose(orig_fp);
-
     // 2) PATCH only the Y channel
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
@@ -676,6 +673,9 @@ void JPEGProcessor::SaveCoverJPEG(const char* filename, const JPEGFile* original
 
     jpeg_finish_compress(&cout);
     fclose(out_fp);
+
+    jpeg_finish_decompress(&din);
+    fclose(orig_fp);
 
     // CLEAN UP
     jpeg_destroy_compress(&cout);
