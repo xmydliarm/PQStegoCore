@@ -14,7 +14,7 @@ public:
         size_t i;
         size_t j;
         size_t k;
-        double value;
+        double distance;
         int q1;
         int q2;
     };

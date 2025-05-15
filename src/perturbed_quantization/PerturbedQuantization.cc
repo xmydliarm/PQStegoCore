@@ -361,7 +361,7 @@ std::vector<PerturbedQuantization::ContribMultiple> PerturbedQuantization::Compu
 
     // Sort by the value component (ascending order - most suitable first)
     auto comparator = [](const ContribMultiple &a, const ContribMultiple &b) {
-        return a.value < b.value;
+        return a.distance < b.distance;
     };
 
     std::ranges::stable_sort(contrib_multiples, comparator);
