@@ -130,6 +130,8 @@ std::string PerturbedQuantization::DecodeMessage(const JPEGFile* original_image,
 
     auto result = ExtractMessageBits(embedded_image->getD(), original_image->getD(), contrib_multiples);
 
+    remove(temp_path.c_str());
+
     std::string decodedMessage = BitVectorToString(result);
 
     // Find the message end sequence 0xFF 0x00 (11111111 00000000)

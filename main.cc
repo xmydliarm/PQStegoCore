@@ -40,6 +40,8 @@ int main(int argc, char* argv[]) {
 
         size_t capacity = PerturbedQuantization::ComputeCapacity(contrib_multiples);
 
+        remove(temp_path.c_str());
+
         cout << "Estimated capacity: " << capacity << " bits\n";
 
     } else if(mode == "-encode" && argc == 5) {
@@ -64,6 +66,8 @@ int main(int argc, char* argv[]) {
         auto image_X2_embedded = PerturbedQuantization::EmbedMessage(original_image, temp_cover_image, D2raw, contrib_multiples, message);
 
         JPEGProcessor::SavePerturbedJPEG(output_image_path, temp_cover_image, image_X2_embedded);
+
+        remove(temp_path.c_str());
 
         std::cout << "Perturbed JPEG saved successfully!" << std::endl;
 
