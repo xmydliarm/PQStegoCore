@@ -70,9 +70,14 @@ V samostatnom priečinku: <br>
 Vo všeobecnost je kompatibilita definová podporou CMake, C++ a knižnice libjpeg-turbo.
 
 ## Architektúra
-
+### Workflow
 <p align="left">
   <img src="https://github.com/user-attachments/assets/da64337c-b069-499a-b4c0-0629d6ddad45" width="380">
+</p>
+
+### UML Class Diagram
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/ec88d706-e2b4-4a56-93ca-6bf6e4aa90b7" width="680">
 </p>
 
 ## Referencie
