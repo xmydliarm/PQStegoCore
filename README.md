@@ -2,7 +2,7 @@
 
 Objektovo orientovaná implementácia steganografického algoritmu <i>Perturbed Quantization</i> v jazyku C++, zameraného na vkladanie tajných správ do JPEG obrázkov a ich extrakciu z nich, technikou odolnou voči štatistickým metódam detekcie.
 
-## Princíp
+## Metodika
 
 <p align="left">
   <img src="https://github.com/user-attachments/assets/121f0467-205f-4297-b2a9-4c56c6094ffe" width="560">
@@ -21,6 +21,16 @@ Objektovo orientovaná implementácia steganografického algoritmu <i>Perturbed 
 - Podporované sú výlučne obrázky komprimované štandardným JPEG procesom
 - Kvôli kapacite sú podporované výlučne obrázky s kvalitou Q >= 70 
 - Pre extrakciu správy je nevyhnutný pôvodný (neupravený) JPEG obrázok
+
+## Build
+V koreňovom adresári projektu: <br>
+`cmake .` <br> 
+`cmake --build .`
+
+V samostatnom priečinku: <br>
+`mkdir build && cd build` <br>
+`cmake ..` <br>
+`cmake --build .`
 
 ## Použitie
 
