@@ -73,7 +73,7 @@ int JPEGProcessor::EstimateQuality(const JPEGFile* jpeg_file) {
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
             double x = 100 - (100.0 * Qm[i][j] - 50) / (2.0 * Q50[i][j]);
-            int casted_x = static_cast<int>(x);
+            int casted_x = static_cast<int>(round(x));
             results.emplace_back(casted_x);
         }
     }
